@@ -90,11 +90,11 @@ class Player():
 
         layer_sizes = None
         if mode == 'gravity':
-            layer_sizes = [6, 20, 1]
+            layer_sizes = [8, 20, 1]
         elif mode == 'helicopter':
-            layer_sizes = [7, 20, 1]
+            layer_sizes = [8, 20, 1]
         elif mode == 'thrust':
-            layer_sizes = [6, 20, 1]
+            layer_sizes = [8, 20, 1]
         return layer_sizes
 
     
@@ -106,25 +106,31 @@ class Player():
         # agent_position example: [600, 250]
         # velocity example: 7
 
-        next_boxes = [box for box in box_lists if box.x - agent_position.x >= 0]
-
+        if box_lists:
+            next_boxes = []
+            for box in box_lists:
+                if box.x - agent_position[0] > 0:
+                    next_boxes.append(box)
+        
+        nearest_box, second_nearest_box = None, None
         if next_boxes:
             nearest_box = min(next_boxes, key=lambda box: box.x)
             next_boxes.remove(nearest_box)
-            second_nearest_box = min(next_boxes, key=lambda box: box.x)
+            if next_boxes:
+                second_nearest_box = min(next_boxes, key=lambda box: box.x)
 
-        first_box_x = (next_boxes and ((nearest_box.x - agent_position.x) / CONFIG['WIDTH'])) or 1
-        first_box_y = (next_boxes and ((nearest_box.y - agent_position.y) / CONFIG['HEIGHT'])) or 0.5
-        first_box_d = first_box_x ** 2 + first_box_y ** 2
+        first_box_x = (nearest_box and ((nearest_box.x - agent_position[0]) / CONFIG['WIDTH'])) or 1
+        first_box_y = (nearest_box and ((nearest_box.gap_mid - agent_position[1]) / CONFIG['HEIGHT'])) or 0.5
+        first_box_d = (first_box_x ** 2 + first_box_y ** 2) * (first_box_y/ abs(first_box_y))
 
-        second_box_x = (next_boxes and ((second_nearest_box.x - agent_position.x) / CONFIG['WIDTH'])) or 1
-        second_box_y = (next_boxes and ((second_nearest_box.y - agent_position.y) / CONFIG['HEIGHT'])) or 0.5
-        second_box_d = second_box_x ** 2 + second_box_y ** 2
+        second_box_x = (second_nearest_box and ((second_nearest_box.x - agent_position[0]) / CONFIG['WIDTH'])) or 1
+        second_box_y = (second_nearest_box and ((second_nearest_box.gap_mid - agent_position[1]) / CONFIG['HEIGHT'])) or 0.5
+        second_box_d = (second_box_x ** 2 + second_box_y ** 2) * (second_box_y/ abs(second_box_y))
 
         result = self.nn.forward([
-            [first_box_x], [first_box_y],
-            [first_box_d], [second_box_x],
-            [second_box_y], [second_box_d], [velocity]
+            [agent_position[1] / CONFIG['HEIGHT']], [velocity],
+            [first_box_x], [first_box_y], [first_box_d],
+            [second_box_x], [second_box_y], [second_box_d]
         ])
 
         direction = 1 if result[0][0] > 0.5 else -1
