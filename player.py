@@ -15,6 +15,7 @@ class Player():
         self.v = 0              # vertical velocity
         self.g = 9.8            # gravity constant
         self.mode = mode        # game mode
+        self.mutated = False
 
         # neural network architecture (AI mode)
         layer_sizes = self.init_network(mode)
@@ -90,11 +91,11 @@ class Player():
 
         layer_sizes = None
         if mode == 'gravity':
-            layer_sizes = [8, 20, 1]
+            layer_sizes = [8, 40, 1]
         elif mode == 'helicopter':
-            layer_sizes = [8, 20, 1]
+            layer_sizes = [8, 40, 1]
         elif mode == 'thrust':
-            layer_sizes = [8, 20, 1]
+            layer_sizes = [8, 40, 1]
         return layer_sizes
 
     
@@ -127,13 +128,14 @@ class Player():
         second_box_y = (second_nearest_box and ((second_nearest_box.gap_mid - agent_position[1]) / CONFIG['HEIGHT'])) or 0.5
         second_box_d = (second_box_x ** 2 + second_box_y ** 2) * (second_box_y/ abs(second_box_y))
 
+
         result = self.nn.forward([
             [agent_position[1] / CONFIG['HEIGHT']], [velocity],
             [first_box_x], [first_box_y], [first_box_d],
             [second_box_x], [second_box_y], [second_box_d]
         ])
 
-        direction = 1 if result[0][0] > 0.5 else -1
+        direction = 1 if result[0][0] > 0 else -1
 
         return direction
 
