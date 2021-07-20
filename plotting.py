@@ -2,7 +2,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-with open('plotting_helicopter.json', 'r') as f:
+with open('plotting.json', 'r') as f:
     data = json.load(f)
 
     avg = np.array(data['avg'])
